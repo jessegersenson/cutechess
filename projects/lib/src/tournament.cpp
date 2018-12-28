@@ -30,6 +30,7 @@
 #include "openingbook.h"
 #include "sprt.h"
 #include "elo.h"
+#include "speedupromps.h"
 
 Tournament::Tournament(GameManager* gameManager, QObject *parent)
 	: QObject(parent),
@@ -55,10 +56,14 @@ Tournament::Tournament(GameManager* gameManager, QObject *parent)
 	  m_bookOwnership(false),
 	  m_openingSuite(nullptr),
 	  m_sprt(new Sprt),
+      m_speedupRomps(new SpeedupRomps),
 	  m_repetitionCounter(0),
 	  m_swapSides(true),
 	  m_pgnOutMode(PgnGame::Verbose),
-	  m_pair(nullptr)
+	  m_pair(nullptr),
+	  m_livePgnOutMode(PgnGame::Verbose),
+      m_limitMovesRate(false)
+
 {
 	Q_ASSERT(gameManager != nullptr);
 }
@@ -166,6 +171,11 @@ Sprt* Tournament::sprt() const
 	return m_sprt;
 }
 
+SpeedupRomps* Tournament::speedupRomps() const
+{
+   return m_speedupRomps;
+}
+
 bool Tournament::canSetRoundMultiplier() const
 {
 	return true;
@@ -256,6 +266,12 @@ void Tournament::setPgnOutput(const QString& fileName, PgnGame::PgnMode mode)
 void Tournament::setPgnWriteUnfinishedGames(bool enabled)
 {
 	m_pgnWriteUnfinishedGames = enabled;
+}
+
+void Tournament::setLivePgnOutput(const QString& fileName, PgnGame::PgnMode mode)
+{
+	m_livePgnout = fileName;
+	m_livePgnOutMode = mode;
 }
 
 void Tournament::setPgnCleanupEnabled(bool enabled)
@@ -352,9 +368,14 @@ void Tournament::startGame(TournamentPair* pair)
 		this, SLOT(onGameStarted(ChessGame*)));
 	connect(game, SIGNAL(finished(ChessGame*)),
 		this, SLOT(onGameFinished(ChessGame*)));
+	connect(game, SIGNAL(pgnMove()),
+		this, SLOT(onPgnMove()));
 
 	game->setTimeControl(white.timeControl(), Chess::Side::White);
 	game->setTimeControl(black.timeControl(), Chess::Side::Black);
+    game->setSpeedupRomps(m_speedupRomps);
+    game->limitMovesRate(m_limitMovesRate);
+
 
 	game->setOpeningBook(white.book(), Chess::Side::White, white.bookDepth());
 	game->setOpeningBook(black.book(), Chess::Side::Black, black.bookDepth());
@@ -495,6 +516,12 @@ bool Tournament::writePgn(PgnGame* pgn, int gameNumber)
 
 	bool ok = true;
 	m_pgnGames[gameNumber] = *pgn;
+
+	if (!m_livePgnout.isEmpty()) {
+		QFile::resize(m_livePgnout, 0);
+		pgn->write(m_livePgnout, m_livePgnOutMode); // write the final pgn
+	}
+
 	while (m_pgnGames.contains(m_savedGameCount + 1))
 	{
 		PgnGame tmp = m_pgnGames.take(++m_savedGameCount);
@@ -572,6 +599,23 @@ void Tournament::onGameStarted(ChessGame* game)
 	m_players[iBlack].setName(game->player(Chess::Side::Black)->name());
 
 	emit gameStarted(game, data->number, iWhite, iBlack);
+}
+
+void Tournament::onPgnMove()
+{
+	if (m_livePgnout.isEmpty()) return;
+
+	ChessGame* sender = qobject_cast<ChessGame*>(QObject::sender());
+	Q_ASSERT(sender != 0);
+
+	// printf(">>>>>>>>>>>>>>>>>>>>SIGNALED>>>>>>>>>>>>>>>>>>\n");
+
+	PgnGame* pgn(sender->pgn());
+
+	QFile::resize(m_livePgnout, 0);
+    // add time delay to prevent crashing
+    usleep(200);
+	pgn->write(m_livePgnout, m_livePgnOutMode);
 }
 
 void Tournament::onGameFinished(ChessGame* game)
@@ -808,3 +852,9 @@ QString Tournament::results() const
 
 	return ret;
 }
+
+void Tournament::limitMovesRate(bool isLimit)
+{
+   m_limitMovesRate = isLimit;
+}
+

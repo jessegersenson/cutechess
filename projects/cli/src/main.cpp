@@ -39,6 +39,7 @@
 #include <sprt.h>
 #include <board/syzygytablebase.h>
 #include <board/result.h>
+#include <speedupromps.h>
 
 #include "cutechesscoreapp.h"
 #include "matchparser.h"
@@ -253,11 +254,14 @@ EngineMatch* parseMatch(const QStringList& args, QObject* parent)
 	parser.addOption("-games", QVariant::Int, 1, 1);
 	parser.addOption("-rounds", QVariant::Int, 1, 1);
 	parser.addOption("-sprt", QVariant::StringList);
+    parser.addOption("-speedup-onesided-romps", QVariant::StringList);
+    parser.addOption("-limit-moves-rate", QVariant::Bool, 0, 0);
 	parser.addOption("-ratinginterval", QVariant::Int, 1, 1);
 	parser.addOption("-debug", QVariant::Bool, 0, 0);
 	parser.addOption("-openings", QVariant::StringList);
 	parser.addOption("-bookmode", QVariant::String);
 	parser.addOption("-pgnout", QVariant::StringList, 1, 3);
+	parser.addOption("-livepgnout", QVariant::StringList, 1, 2);
 	parser.addOption("-epdout", QVariant::String, 1, 1);
 	parser.addOption("-repeat", QVariant::Int, 0, 1);
 	parser.addOption("-noswap", QVariant::Bool, 0, 0);
@@ -419,6 +423,27 @@ EngineMatch* parseMatch(const QStringList& args, QObject* parent)
 			if (ok)
 				tournament->sprt()->initialize(elo0, elo1, alpha, beta);
 		}
+
+       // Rule to end the game quickly in a winning position
+       else if (name == "-speedup-onesided-romps")
+       {
+           QMap<QString, QString> params = option.toMap("base=10000|inc=2000|score=300|gameply=200|ply=7");
+           bool sorOk[5];
+           int base = params["base"].toInt(sorOk);
+           int inc = params["inc"].toInt(sorOk + 1);
+           int score = params["score"].toInt(sorOk + 2);
+           int gameply = params["gameply"].toInt(sorOk + 3);
+           int ply = params["ply"].toInt(sorOk + 4);
+           for (int i = 0; i < 5; i++)
+               ok = ok && sorOk[i];
+           if (ok)
+               tournament->speedupRomps()->initialize(base, inc, score, gameply, ply);
+       }
+       // Limit moves rate to
+       else if (name == "-limit-moves-rate")
+           tournament->limitMovesRate(true);
+
+
 		// Interval for rating list updates
 		else if (name == "-ratinginterval")
 			match->setRatingInterval(value.toInt());
@@ -509,6 +534,22 @@ EngineMatch* parseMatch(const QStringList& args, QObject* parent)
 			}
 			if (ok)
 				tournament->setPgnOutput(list.at(0), mode);
+		}
+		// PGN file where the games should be saved after every move
+		else if (name == "-livepgnout")
+		{
+			PgnGame::PgnMode mode = PgnGame::Verbose;
+			QStringList list = value.toStringList();
+			if (list.size() == 2)
+			{
+				if (list.at(1) == "min")
+					mode = PgnGame::Minimal;
+				else
+					ok = false;
+			}
+			if (ok)
+				tournament->setLivePgnOutput(list.at(0), mode);
+
 		}
 		// FEN/EPD output file to save positions
 		else if (name == "-epdout")

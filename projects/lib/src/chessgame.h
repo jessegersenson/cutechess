@@ -33,6 +33,7 @@ namespace Chess { class Board; }
 class ChessPlayer;
 class OpeningBook;
 class MoveEvaluation;
+class SpeedupRomps;
 
 
 class LIB_EXPORT ChessGame : public QObject
@@ -63,6 +64,9 @@ class LIB_EXPORT ChessGame : public QObject
 		void setStartingFen(const QString& fen);
 		void setTimeControl(const TimeControl& timeControl,
 				    Chess::Side side = Chess::Side());
+        void setSpeedupRomps(SpeedupRomps* speedupRomps);
+        void limitMovesRate(bool isLimit);
+
 		void setMoves(const QVector<Chess::Move>& moves);
 		bool setMoves(const PgnGame& pgn);
 		void setOpeningBook(const OpeningBook* book,
@@ -105,6 +109,7 @@ class LIB_EXPORT ChessGame : public QObject
 			      Chess::Result result = Chess::Result());
 		void startFailed(ChessGame* game = nullptr);
 		void playersReady();
+		void pgnMove();
 
 	private slots:
 		void startGame();
@@ -121,10 +126,14 @@ class LIB_EXPORT ChessGame : public QObject
 		void initializePgn();
 		void addPgnMove(const Chess::Move& move, const QString& comment);
 		void emitLastMove();
+        void checkRomps(const Chess::Side& side);
+        void correctMovesRate();
+
 		
 		Chess::Board* m_board;
 		ChessPlayer* m_player[2];
 		TimeControl m_timeControl[2];
+        SpeedupRomps* m_speedupRomps;
 		const OpeningBook* m_book[2];
 		int m_bookDepth[2];
 		int m_startDelay;
@@ -143,6 +152,7 @@ class LIB_EXPORT ChessGame : public QObject
 		QSemaphore m_pauseSem;
 		QSemaphore m_resumeSem;
 		GameAdjudicator m_adjudicator;
+        bool m_limitMovesRate;
 };
 
 #endif // CHESSGAME_H

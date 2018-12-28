@@ -45,7 +45,9 @@ HEADERS += $$PWD/chessengine.h \
     $$PWD/pyramidtournament.h \
     $$PWD/tournamentplayer.h \
     $$PWD/tournamentpair.h \
-    $$PWD/worker.h
+    $$PWD/worker.h \
+    $$PWD/speedupromps.h
+
 SOURCES += $$PWD/chessengine.cpp \
     $$PWD/chessgame.cpp \
     $$PWD/chessplayer.cpp \
@@ -89,7 +91,9 @@ SOURCES += $$PWD/chessengine.cpp \
     $$PWD/pyramidtournament.cpp \
     $$PWD/tournamentplayer.cpp \
     $$PWD/tournamentpair.cpp \
-    $$PWD/worker.cpp
+    $$PWD/worker.cpp \
+    $$PWD/speedupromps.cpp
+
 win32 { 
     HEADERS += $$PWD/engineprocess_win.h \
 	$$PWD/pipereader_win.h

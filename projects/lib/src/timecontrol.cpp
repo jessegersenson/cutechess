@@ -340,7 +340,7 @@ void TimeControl::update(bool applyIncrement)
 		setTimeLeft(m_timePerMove);
 	else
 	{
-	        int newTimeLeft = m_timeLeft - m_lastMoveTime;
+       int newTimeLeft = m_timeLeft - m_lastMoveTime;
 		if (applyIncrement)
 			newTimeLeft += m_increment;
 		setTimeLeft(newTimeLeft);

@@ -37,6 +37,7 @@ class ChessGame;
 class OpeningBook;
 class OpeningSuite;
 class Sprt;
+class SpeedupRomps;
 
 /*!
  * \brief Base class for chess tournaments
@@ -118,6 +119,8 @@ class LIB_EXPORT Tournament : public QObject
 		 */
 		Sprt* sprt() const;
 
+        SpeedupRomps* speedupRomps() const;
+
 		/*! Sets the tournament's name to \a name. */
 		void setName(const QString& name);
 		/*! Sets the tournament's site to \a site. */
@@ -177,6 +180,8 @@ class LIB_EXPORT Tournament : public QObject
 		 * won't be saved.
 		 */
 		void setPgnOutput(const QString& fileName,
+				  PgnGame::PgnMode mode = PgnGame::Verbose);
+		void setLivePgnOutput(const QString& fileName,
 				  PgnGame::PgnMode mode = PgnGame::Verbose);
 
 		/*!
@@ -247,6 +252,11 @@ class LIB_EXPORT Tournament : public QObject
 		 * The default implementation works for most tournament types.
 		 */
 		virtual QString results() const;
+        /*!
+         * Limits move rates to make the games easier to watch
+         */
+        void limitMovesRate(bool isLimit);
+
 
 	public slots:
 		/*! Starts the tournament. */
@@ -402,6 +412,7 @@ class LIB_EXPORT Tournament : public QObject
 		void onGameFinished(ChessGame* game);
 		void onGameDestroyed(ChessGame* game);
 		void onGameStartFailed(ChessGame* game);
+		void onPgnMove();
 
 	private:
 		struct GameData
@@ -446,6 +457,7 @@ class LIB_EXPORT Tournament : public QObject
 		GameAdjudicator m_adjudicator;
 		OpeningSuite* m_openingSuite;
 		Sprt* m_sprt;
+        SpeedupRomps* m_speedupRomps;
 		QFile m_pgnFile;
 		QTextStream m_pgnOut;
 		QFile m_epdFile;
@@ -460,6 +472,9 @@ class LIB_EXPORT Tournament : public QObject
 		QMap<int, PgnGame> m_pgnGames;
 		QMap<ChessGame*, GameData*> m_gameData;
 		QVector<Chess::Move> m_openingMoves;
+        bool m_limitMovesRate;
+		QString m_livePgnout;
+		PgnGame::PgnMode m_livePgnOutMode;
 };
 
 #endif // TOURNAMENT_H

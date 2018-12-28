@@ -22,7 +22,6 @@
 #include "board/board.h"
 #include "chessplayer.h"
 #include "openingbook.h"
-#include "speedupromps.h"
 #include "board/westernboard.h"
 
 namespace {
@@ -158,7 +157,6 @@ QString evalString(ChessGame *game, const MoveEvaluation& eval)
 ChessGame::ChessGame(Chess::Board* board, PgnGame* pgn, QObject* parent)
 	: QObject(parent),
 	  m_board(board),
-	  m_speedupRomps(nullptr),
 	  m_startDelay(0),
 	  m_finished(false),
 	  m_gameInProgress(false),
@@ -166,8 +164,7 @@ ChessGame::ChessGame(Chess::Board* board, PgnGame* pgn, QObject* parent)
 	  m_pgnInitialized(false),
 	  m_bookOwnership(false),
 	  m_boardShouldBeFlipped(false),
-      m_pgn(pgn),
-      m_limitMovesRate(false)
+	  m_pgn(pgn)
 {
 	Q_ASSERT(pgn != nullptr);
 
@@ -182,7 +179,6 @@ ChessGame::ChessGame(Chess::Board* board, PgnGame* pgn, QObject* parent)
 ChessGame::~ChessGame()
 {
 	delete m_board;
-    delete m_speedupRomps;
 	if (m_bookOwnership)
 	{
 		bool same = (m_book[0] == m_book[1]);
@@ -335,8 +331,6 @@ void ChessGame::addPgnMove(const Chess::Move& move, const QString& comment)
 	md.comment = comment;
 
 	m_pgn->addMove(md);
-
-	emit pgnMove();
 }
 
 void ChessGame::emitLastMove()
@@ -413,8 +407,6 @@ void ChessGame::startTurn()
 	Chess::Move move(bookMove(side));
 	if (move.isNull())
 	{
-        checkRomps(side);
-        correctMovesRate();
 		m_player[side]->go();
 		m_player[side.opposite()]->startPondering();
 	}
@@ -423,36 +415,6 @@ void ChessGame::startTurn()
 		m_player[side.opposite()]->clearPonderState();
 		m_player[side]->makeBookMove(move);
 	}
-}
-
-void ChessGame::checkRomps(const Chess::Side& side)
-{
-   if (m_speedupRomps && m_moves.size() > 2)
-   {
-       int ply = m_moves.size() - 1;
-       m_speedupRomps->update(ply, m_scores[ply], m_scores[ply-1]);
-       if (m_speedupRomps->isResetNeeded())
-       {
-           auto tc = TimeControl(*m_player[side]->timeControl());
-           tc.setTimeLeft(m_speedupRomps->newTimeLeft());
-           tc.setTimeIncrement(m_speedupRomps->newTimeInc());
-           m_player[side]->setTimeControl(tc);
-           m_speedupRomps->incResetCount();
-       }
-   }
-}
-
-void ChessGame::correctMovesRate()
-{
-   if (!m_limitMovesRate)
-       return;
-   const int minMoveTimeMs = 1000;
-   auto side(m_board->sideToMove());
-   auto lastMoveTime = m_player[side.opposite()]->timeControl()->lastMoveTime();
-   if (lastMoveTime < minMoveTimeMs) {
-       auto delay = ulong(minMoveTimeMs - lastMoveTime);
-       QThread::msleep(delay);
-   }
 }
 
 void ChessGame::onAdjudication(const Chess::Result& result)
@@ -565,20 +527,6 @@ void ChessGame::setTimeControl(const TimeControl& timeControl, Chess::Side side)
 	if (side != Chess::Side::Black)
 		m_timeControl[Chess::Side::White] = timeControl;
 }
-
-void ChessGame::setSpeedupRomps(SpeedupRomps* speedupRomps)
-{
-   if (m_speedupRomps)
-       delete m_speedupRomps;
-   m_speedupRomps = speedupRomps != nullptr
-       ? new SpeedupRomps(*speedupRomps) : nullptr;
-}
-
-void ChessGame::limitMovesRate(bool isLimit)
-{
-   m_limitMovesRate = isLimit;
-}
-
 
 void ChessGame::setMoves(const QVector<Chess::Move>& moves)
 {
