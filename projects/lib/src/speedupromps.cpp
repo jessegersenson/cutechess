@@ -1,28 +1,18 @@
 #include "speedupromps.h"
 #include <QtGlobal>
 
-SpeedupRomps::SpeedupRomps()
-   : m_baseTimeLeft(0)
-   , m_increment(0)
-   , m_scoreLimit(0)
-   , m_gamePlyLimit(0)
-   , m_murderPlyLimit(0)
-   , m_state(Monitoring)
-   , m_murderPlyCount(0)
+SpeedupRomps::SpeedupRomps(int baseTimeLeft,
+						   int timeIncrement,
+						   int scoreLimit,
+						   int gamePlyLimit,
+						   int seqPlyLimit)
+	: m_baseTimeLeft(baseTimeLeft)
+	, m_increment(timeIncrement)
+	, m_scoreLimit(scoreLimit)
+	, m_gamePlyLimit(gamePlyLimit)
+	, m_murderPlyLimit(seqPlyLimit)
 {}
 
-void SpeedupRomps::initialize(int baseTimeLeft,
-                            int timeIncrement,
-                            int scoreLimit,
-                            int gamePlyLimit,
-                            int seqPlyLimit)
-{
-   m_baseTimeLeft = baseTimeLeft;
-   m_increment = timeIncrement;
-   m_scoreLimit = scoreLimit;
-   m_gamePlyLimit = gamePlyLimit;
-   m_murderPlyLimit = seqPlyLimit;
-}
 
 void SpeedupRomps::update(int cur_ply, int cur_score, int prev_score)
 {

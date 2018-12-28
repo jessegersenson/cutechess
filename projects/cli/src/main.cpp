@@ -437,7 +437,7 @@ EngineMatch* parseMatch(const QStringList& args, QObject* parent)
            for (int i = 0; i < 5; i++)
                ok = ok && sorOk[i];
            if (ok)
-               tournament->speedupRomps()->initialize(base, inc, score, gameply, ply);
+               tournament->setSpeedupRomps(new SpeedupRomps(base, inc, score, gameply, ply));
        }
        // Limit moves rate to
        else if (name == "-limit-moves-rate")

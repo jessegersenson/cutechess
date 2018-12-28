@@ -15,7 +15,7 @@
     along with Cute Chess.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
+#include "unistd.h"
 #include "tournament.h"
 #include <QFile>
 #include <QMultiMap>
@@ -56,7 +56,7 @@ Tournament::Tournament(GameManager* gameManager, QObject *parent)
 	  m_bookOwnership(false),
 	  m_openingSuite(nullptr),
 	  m_sprt(new Sprt),
-      m_speedupRomps(new SpeedupRomps),
+      m_speedupRomps(nullptr),
 	  m_repetitionCounter(0),
 	  m_swapSides(true),
 	  m_pgnOutMode(PgnGame::Verbose),
@@ -88,6 +88,7 @@ Tournament::~Tournament()
 
 	delete m_openingSuite;
 	delete m_sprt;
+	delete m_speedupRomps;
 
 	if (m_pgnFile.isOpen())
 		m_pgnFile.close();
@@ -175,6 +176,14 @@ SpeedupRomps* Tournament::speedupRomps() const
 {
    return m_speedupRomps;
 }
+
+void Tournament::setSpeedupRomps(SpeedupRomps* romps)
+{
+	if (m_speedupRomps)
+		delete m_speedupRomps;
+	m_speedupRomps = romps;
+}
+
 
 bool Tournament::canSetRoundMultiplier() const
 {

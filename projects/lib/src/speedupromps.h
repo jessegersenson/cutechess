@@ -12,15 +12,13 @@
 class LIB_EXPORT SpeedupRomps
 {
 public:
-   /*! Zero-initialization */
-   SpeedupRomps();
 
-   /*! Initializes an object */
-   void initialize(int baseTimeLeft,
-                   int timeIncrement,
-                   int scoreLimit,
-                   int gamePlyLimit,
-                   int seqPlyLimit);
+	/*! Initialization */
+	SpeedupRomps(int baseTimeLeft,
+				 int timeIncrement,
+				 int scoreLimit,
+				 int gamePlyLimit,
+				 int seqPlyLimit);
 
    /*! Updates the state on each ply */
    void update(int cur_ply, int cur_score, int prev_score);

@@ -121,6 +121,8 @@ class LIB_EXPORT Tournament : public QObject
 
         SpeedupRomps* speedupRomps() const;
 
+	    void setSpeedupRomps(SpeedupRomps* romps);
+
 		/*! Sets the tournament's name to \a name. */
 		void setName(const QString& name);
 		/*! Sets the tournament's site to \a site. */
