@@ -248,6 +248,7 @@ EngineMatch* parseMatch(const QStringList& args, QObject* parent)
 	parser.addOption("-resign", QVariant::StringList);
 	parser.addOption("-maxmoves", QVariant::Int, 1, 1);
 	parser.addOption("-tb", QVariant::String, 1, 1);
+    parser.addOption("-tbdrawonly", QVariant::Bool, 0, 0);
 	parser.addOption("-tbpieces", QVariant::Int, 1, 1);
 	parser.addOption("-tbignore50", QVariant::Bool, 0, 0);
 	parser.addOption("-event", QVariant::String, 1, 1);
@@ -362,7 +363,7 @@ EngineMatch* parseMatch(const QStringList& args, QObject* parent)
 		// Syzygy tablebase adjudication
 		else if (name == "-tb")
 		{
-			adjudicator.setTablebaseAdjudication(true);
+ 			adjudicator.setTablebaseAdjudication(true, false);
 			QString path = value.toString();
 
 			ok = SyzygyTablebase::initialize(path) &&
@@ -370,6 +371,13 @@ EngineMatch* parseMatch(const QStringList& args, QObject* parent)
 			if (!ok)
 				qWarning("Could not load Syzygy tablebases");
 		}
+		// Adjudicate draws only
+		else if (name == "-tbdrawonly")
+		{
+			adjudicator.setTablebaseAdjudication(true, true);
+		}
+
+
 		// Syzygy tablebase pieces
 		else if (name == "-tbpieces")
 		{

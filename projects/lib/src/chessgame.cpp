@@ -446,7 +446,7 @@ void ChessGame::correctMovesRate()
 {
    if (!m_limitMovesRate)
        return;
-   const int minMoveTimeMs = 1000;
+   const int minMoveTimeMs = 1500;
    auto side(m_board->sideToMove());
    auto lastMoveTime = m_player[side.opposite()]->timeControl()->lastMoveTime();
    if (lastMoveTime < minMoveTimeMs) {

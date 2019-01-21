@@ -151,18 +151,22 @@ Options:
   -wait N		Wait N milliseconds between games. The default is 0.
   -speedup-onesided-romps [base=BASE] [inc=INC] [score=SCORE] [gameply=GAMEPLY]
            [ply=PLY]
+
            End a game quickly in a "clearly winning" position.
            Time control is changed if the score is above SCORE cp for PLY
            moves, and the game has reached a minimum number of moves GAMEPLY.
+
            base    - time in ms, new left time (default 10000)
            inc     - time in ms, new time increment (default 2000)
            score   - score in cp, absolute value of romp score (default 300)
-           gameply - number of plies, defines when the monitoring for romps is
-                     started (default 200)
+           gameply - ply afterwhich monitoring for romps starts (default 200)
            ply     - number of plies, defines the number of romping plies
                      after which the bullet mode is activated (default 7)
+
   -limit-moves-rate  Limit the rate of moves to make the game easier to watch
-           (max 1 game per second)
+           (default 1500 ms per ply)
+
+  -tbdrawonly		adjudicate tablebase draws (requires "-tb")
 
 Engine options:
 

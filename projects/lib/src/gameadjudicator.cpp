@@ -28,7 +28,8 @@ GameAdjudicator::GameAdjudicator()
 	  m_resignMoveCount(0),
 	  m_resignScore(0),
 	  m_maxGameLength(0),
-	  m_tbEnabled(false)
+	  m_tbEnabled(false),
+	  m_tbDrawOnly(false)
 {
 	m_resignScoreCount[0] = 0;
 	m_resignScoreCount[1] = 0;
@@ -61,7 +62,7 @@ void GameAdjudicator::setMaximumGameLength(int moveCount)
 	m_maxGameLength = moveCount;
 }
 
-void GameAdjudicator::setTablebaseAdjudication(bool enable)
+void GameAdjudicator::setTablebaseAdjudication(bool enable, bool drawOnly)
 {
 	m_tbEnabled = enable;
 }
@@ -74,8 +75,24 @@ void GameAdjudicator::addEval(const Chess::Board* board, const MoveEvaluation& e
 	if (m_tbEnabled)
 	{
 		m_result = board->tablebaseResult();
-		if (!m_result.isNone())
-			return;
+	      if (m_result.isDraw())
+	      {
+		 return;
+	      }
+	      else
+	      {
+		if (m_tbDrawOnly)
+		 {
+		    if (m_result.isNone())
+		    {
+		      return;
+		    }
+		    else
+		    {
+		       m_result = Chess::Result();
+		    }
+		 }
+	      }
 	}
 
 	// Moves forced by the user (eg. from opening book or played by user)
