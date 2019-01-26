@@ -88,7 +88,7 @@ Options:
   -maxmoves N		Adjudicate the game as a draw if the game is still
 			ongoing after N or more full moves have been played.
 			This limit is not in action if set to zero.
-  -tb PATHS		Adjudicate drawn games using Syzygy tablebases. PATHS should
+  -tb PATHS		Adjudicate games using Syzygy tablebases. PATHS should
 			be semicolon-delimited list of paths to the compressed
 			tablebase files. Only the DTZ tablebase files are
 			required.
@@ -165,6 +165,8 @@ Options:
 
   -limit-moves-rate  Limit the rate of moves to make the game easier to watch
            (default 1500 ms per ply)
+
+  -tbdrawonly		adjudicate tablebase draws (requires "-tb")
 
 Engine options:
 

@@ -1,0 +1,146 @@
+diff --git a/projects/cli/res/doc/help.txt b/projects/cli/res/doc/help.txt
+index 05693bb3..57db00a6 100644
+--- a/projects/cli/res/doc/help.txt
++++ b/projects/cli/res/doc/help.txt
+@@ -88,7 +88,7 @@ Options:
+   -maxmoves N		Adjudicate the game as a draw if the game is still
+ 			ongoing after N or more full moves have been played.
+ 			This limit is not in action if set to zero.
+-  -tb PATHS		Adjudicate games using Syzygy tablebases. PATHS should
++  -tb PATHS		Adjudicate drawn games using Syzygy tablebases. PATHS should
+ 			be semicolon-delimited list of paths to the compressed
+ 			tablebase files. Only the DTZ tablebase files are
+ 			required.
+@@ -166,8 +166,6 @@ Options:
+   -limit-moves-rate [time_ms] Limit the rate of moves to make the game easier to watch
+            (default 1000 ms per ply)
+ 
+-  -tbdrawonly		adjudicate tablebase draws (requires "-tb")
+-
+ Engine options:
+ 
+   conf=NAME		Use an engine with the name NAME from Cute Chess'
+diff --git a/projects/cli/src/main.cpp b/projects/cli/src/main.cpp
+index a5d894da..89c04301 100644
+--- a/projects/cli/src/main.cpp
++++ b/projects/cli/src/main.cpp
+@@ -248,7 +248,6 @@ EngineMatch* parseMatch(const QStringList& args, QObject* parent)
+ 	parser.addOption("-resign", QVariant::StringList);
+ 	parser.addOption("-maxmoves", QVariant::Int, 1, 1);
+ 	parser.addOption("-tb", QVariant::String, 1, 1);
+-    parser.addOption("-tbdrawonly", QVariant::Bool, 0, 0);
+ 	parser.addOption("-tbpieces", QVariant::Int, 1, 1);
+ 	parser.addOption("-tbignore50", QVariant::Bool, 0, 0);
+ 	parser.addOption("-event", QVariant::String, 1, 1);
+@@ -363,7 +362,7 @@ EngineMatch* parseMatch(const QStringList& args, QObject* parent)
+ 		// Syzygy tablebase adjudication
+ 		else if (name == "-tb")
+ 		{
+- 			adjudicator.setTablebaseAdjudication(true, false);
++			adjudicator.setTablebaseAdjudication(true);
+ 			QString path = value.toString();
+ 
+ 			ok = SyzygyTablebase::initialize(path) &&
+@@ -371,12 +370,6 @@ EngineMatch* parseMatch(const QStringList& args, QObject* parent)
+ 			if (!ok)
+ 				qWarning("Could not load Syzygy tablebases");
+ 		}
+-		// Adjudicate draws only
+-		else if (name == "-tbdrawonly")
+-		{
+-			adjudicator.setTablebaseAdjudication(true, true);
+-		}
+-
+ 
+ 		// Syzygy tablebase pieces
+ 		else if (name == "-tbpieces")
+diff --git a/projects/gui/src/gamesettingswidget.cpp b/projects/gui/src/gamesettingswidget.cpp
+index 8a8dfc1e..3ce6182c 100644
+--- a/projects/gui/src/gamesettingswidget.cpp
++++ b/projects/gui/src/gamesettingswidget.cpp
+@@ -140,7 +140,7 @@ GameAdjudicator GameSettingsWidget::adjudicator() const
+ 	ret.setResignThreshold(ui->m_resignMoveCountSpin->value(),
+ 			       -ui->m_resignScoreSpin->value());
+ 	ret.setMaximumGameLength(ui->m_maxGameLengthSpin->value());
+-	ret.setTablebaseAdjudication(ui->m_tbCheck->isChecked(), false);
++	ret.setTablebaseAdjudication(ui->m_tbCheck->isChecked());
+ 
+ 	return ret;
+ }
+diff --git a/projects/lib/src/gameadjudicator.cpp b/projects/lib/src/gameadjudicator.cpp
+index ca0a0f6a..41fd4ad7 100644
+--- a/projects/lib/src/gameadjudicator.cpp
++++ b/projects/lib/src/gameadjudicator.cpp
+@@ -28,8 +28,7 @@ GameAdjudicator::GameAdjudicator()
+ 	  m_resignMoveCount(0),
+ 	  m_resignScore(0),
+ 	  m_maxGameLength(0),
+-	  m_tbEnabled(false),
+-	  m_tbDrawOnly(false)
++	  m_tbEnabled(false)
+ {
+ 	m_resignScoreCount[0] = 0;
+ 	m_resignScoreCount[1] = 0;
+@@ -62,7 +61,7 @@ void GameAdjudicator::setMaximumGameLength(int moveCount)
+ 	m_maxGameLength = moveCount;
+ }
+ 
+-void GameAdjudicator::setTablebaseAdjudication(bool enable, bool drawOnly)
++void GameAdjudicator::setTablebaseAdjudication(bool enable)
+ {
+ 	m_tbEnabled = enable;
+ }
+@@ -74,25 +73,12 @@ void GameAdjudicator::addEval(const Chess::Board* board, const MoveEvaluation& e
+ 	// Tablebase adjudication
+ 	if (m_tbEnabled)
+ 	{
+-		m_result = board->tablebaseResult();
+-	      if (m_result.isDraw())
+-	      {
+-		 return;
+-	      }
+-	      else
+-	      {
+-		if (m_tbDrawOnly)
+-		 {
+-		    if (m_result.isNone())
+-		    {
+-		      return;
+-		    }
+-		    else
+-		    {
+-		       m_result = Chess::Result();
+-		    }
+-		 }
+-	      }
++		auto tb_result = board->tablebaseResult();
++		if (tb_result.isDraw())
++		{
++			m_result = tb_result;
++			return;
++		}
+ 	}
+ 
+ 	// Moves forced by the user (eg. from opening book or played by user)
+diff --git a/projects/lib/src/gameadjudicator.h b/projects/lib/src/gameadjudicator.h
+index 4652796e..7585108d 100644
+--- a/projects/lib/src/gameadjudicator.h
++++ b/projects/lib/src/gameadjudicator.h
+@@ -71,7 +71,7 @@ class LIB_EXPORT GameAdjudicator
+ 		 * If \a enable is true then games are adjudicated if the
+ 		 * latest position is found in the tablebases.
+ 		 */
+-		void setTablebaseAdjudication(bool enable, bool drawOnly);
++		void setTablebaseAdjudication(bool enable);
+ 
+ 		/*!
+ 		 * Adds a new move evaluation to the adjudicator.
+@@ -103,7 +103,6 @@ class LIB_EXPORT GameAdjudicator
+ 		int m_resignScoreCount[2];
+ 		int m_maxGameLength;
+ 		bool m_tbEnabled;
+-		bool m_tbDrawOnly;
+ 		Chess::Result m_result;
+ };
+ 
+
