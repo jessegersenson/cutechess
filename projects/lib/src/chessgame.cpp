@@ -434,7 +434,8 @@ void ChessGame::checkRomps(const Chess::Side& side)
        if (m_speedupRomps->isResetNeeded())
        {
            auto tc = TimeControl(*m_player[side]->timeControl());
-           tc.setTimeLeft(m_speedupRomps->newTimeLeft());
+           if (tc.timeLeft() > m_speedupRomps->newTimeLeft())
+             tc.setTimeLeft(m_speedupRomps->newTimeLeft());
            tc.setTimeIncrement(m_speedupRomps->newTimeInc());
            m_player[side]->setTimeControl(tc);
            m_speedupRomps->incResetCount();
